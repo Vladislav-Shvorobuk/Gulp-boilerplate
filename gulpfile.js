@@ -6,7 +6,7 @@ var gulp = require('gulp'),
     uglify = require('gulp-uglify'),
     sass = require('gulp-sass'),
     sourcemaps = require('gulp-sourcemaps'),
-        rigger = require('gulp-rigger'),
+    rigger = require('gulp-rigger'),
     //     cssmin = require('gulp-minify-css'),
     //     imagemin = require('gulp-imagemin'),
     //     pngquant = require('imagemin-pngquant'),
@@ -33,19 +33,49 @@ gulp.task('webserver', function () {
 gulp.task('html:build', function () {
     gulp.src('src/*.html') //Выберем файлы по нужному пути
         .pipe(gulp.dest('dest/')) //Выплюнем их в папку dest
-        .pipe(reload({stream: true})); //И перезагрузим наш сервер для обновлений
+        .pipe(reload({ stream: true })); //И перезагрузим наш сервер для обновлений
 });
 
 gulp.task('js:build', function () {
-   return gulp.src(
+    return gulp.src(
         [
             'src/**/main.js',
             'src/**/service.js',
         ]) //Найдем наш main файл
+        .pipe(sourcemaps.init()) //Инициализируем sourcemap
         .pipe(concat('index.js'))
+        .pipe(uglify()) // Сжимаем JS файл
+        .pipe(sourcemaps.write()) //Пропишем карты
         .pipe(gulp.dest('dest/js')) //Выплюнем готовый файл в dest
-        .pipe(reload({stream: true})); //И перезагрузим сервер
+        .pipe(reload({ stream: true })); //И перезагрузим сервер
 });
+
+gulp.task('style:build', function () {
+    gulp.src(['src/styles/**/main.scss']) //Выберем наш main.scss
+        .pipe(sourcemaps.init()) //То же самое что и с js
+        .pipe(sass()) //Скомпилируем
+        .pipe(prefixer()) //Добавим вендорные префиксы
+        .pipe(sourcemaps.write())
+        .pipe(gulp.dest('dest/css/')) //И в dest/css
+        .pipe(reload({ stream: true }));
+});
+
+gulp.task('build', ['html:build', 'js:build', 'style:build']);
+
+gulp.task('watch', function () {
+    watch(['src/**/*.html'], function (event, cb) {
+        gulp.start('html:build');
+    });
+    watch(['src/styles/**/*.scss'], function (event, cb) {
+        gulp.start('style:build');
+    });
+    watch(['src/js/*.js'], function (event, cb) {
+        gulp.start('js:build');
+    });
+});
+
+
+gulp.task('default', ['build', 'webserver', 'watch']);
 
 
 
